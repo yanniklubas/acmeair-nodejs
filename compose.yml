@@ -1,0 +1,55 @@
+services:
+  acmeair-mongo:
+    image: mongo:5.0.27
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin_user
+      - MONGO_INITDB_ROOT_PASSWORD=sup3rs3cr3t
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongo mongodb://admin_user:sup3rs3cr3t@localhost:27017/?authSource=admin --quiet
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+    restart: always
+    expose:
+      - '27017'
+    ports:
+      - 27017:27017
+  acmeair-web:
+    build: .
+    image: acmeair/web:1.0.0
+    environment:
+      - APP_NAME=app.js
+      - MONGO_URL=mongodb://admin_user:sup3rs3cr3t@acmeair-mongo:27017/acmeair?authSource=admin
+    ports:
+      - 9080:9080
+    depends_on:
+      acmeair-mongo:
+        condition: service_healthy
+  cadvisor:
+    privileged: true
+    image: gcr.io/cadvisor/cadvisor:v0.47.2
+    ports:
+      - 5050:8080
+    devices:
+      - /dev/kmsg
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    depends_on:
+      - acmeair-web
+    expose:
+      - '8080'
+  prometheus:
+    image: prom/prometheus:v2.49.1
+    ports:
+      - 9090:9090
+    volumes:
+      - $PWD/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - $PWD/metrics:/prometheus:rw
+    depends_on:
+      - cadvisor
+    user: ${PROMETHEUS_UID?PROMETHEUS_UID unset}:${PROMETHEUS_GID?PROMETHEUS_GID unset}
