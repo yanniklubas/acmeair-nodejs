@@ -1,17 +1,6 @@
-# Format: FROM    repository[:version]
-FROM       ubuntu:latest
+FROM node:16
 
-# Format: MAINTAINER Name <email@addr.ess>
-MAINTAINER Yang Lei <yanglei@us.ibm.com>
-
-# Installation:
-
-# Update apt-get sources AND install NodeJS and npm
-RUN apt-get update && apt-get install -y nodejs && apt-get install -y npm 
-
-# The real logic
-
-ADD ./ /var/apps/acmeair-nodejs
+COPY ./ /var/apps/acmeair-nodejs
 
 RUN \
   rm -fr /var/apps/acmeair-nodejs/.git ;\
