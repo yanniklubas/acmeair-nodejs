@@ -1,0 +1,240 @@
+settings:
+  request_order: SEQUENTIAL
+services:
+  - service_name: acmeair-web
+    protocol: http
+    response_content_type: ignore
+    hosts:
+      - '{{ACMEAIR_WEB_HOST}}'
+    common_headers:
+      Content-Type: application/json
+setup_requests:
+  - service_name: acmeair-web
+    method: GET
+    uri:
+      text: /rest/api/loader/load
+user_requests:
+  # Login
+  - service_name: acmeair-web
+    method: POST
+    uri:
+      text: /rest/api/login
+    body:
+      type: COMPOSITE
+      children:
+        - text: '{"login": "uid'
+        - type: RANDOMINT
+          text: 0, {{SEED_COUNT}}
+          store_as: uid
+        - text: '@email.com", "password": "password"}'
+    post_processing_expressions:
+      - type: EXTRACTHEADER
+        text: Set-Cookie
+        store_as: session_id
+  # View Profile Information
+  - service_name: acmeair-web
+    method: GET
+    headers:
+      Cookie:
+        type: VARIABLE
+        text: session_id
+    uri:
+      type: COMPOSITE
+      children:
+        - text: /rest/api/customer/byid/uid
+        - type: VARIABLE
+          text: uid
+        - text: '@email.com'
+    post_processing_expressions:
+      - type: EXTRACT
+        text: _id
+        store_as: _id
+      - type: EXTRACT
+        text: status
+        store_as: status
+      - type: EXTRACT
+        text: total_miles
+        store_as: total_miles
+      - type: EXTRACT
+        text: miles_ytd
+        store_as: miles_ytd
+      - type: EXTRACT
+        text: address.streetAddress1
+        store_as: street_address_1
+      - type: EXTRACT
+        text: address.city
+        store_as: city
+      - type: EXTRACT
+        text: address.stateProvince
+        store_as: state_province
+      - type: EXTRACT
+        text: address.country
+        store_as: country
+      - type: EXTRACT
+        text: address.postalCode
+        store_as: postal_code
+      - type: EXTRACT
+        text: phoneNumber
+        store_as: phone_number
+      - type: EXTRACT
+        text: phoneNumberType
+        store_as: phone_number_type
+  # Update Customer
+  - service_name: acmeair-web
+    method: POST
+    headers:
+      Cookie:
+        type: VARIABLE
+        text: session_id
+    uri:
+      type: COMPOSITE
+      children:
+        - text: /rest/api/customer/byid/uid
+        - type: VARIABLE
+          text: uid
+        - text: '@email.com'
+    body:
+      type: COMPOSITE
+      children:
+        - text: '{"_id": "'
+        - type: VARIABLE
+          text: _id
+        - text: '", "password": "password", "status": "'
+        - type: VARIABLE
+          text: status
+        - text: '", "total_miles": "'
+        - type: VARIABLE
+          text: total_miles
+        - text: '", "miles_ytd": "'
+        - type: VARIABLE
+          text: miles_ytd
+        - text: '", "address": {"streetAddress1": "'
+        # We cannot parse substrings
+        - type: VARIABLE
+          text: street_address_1
+        - text: '", "city": "'
+        - type: VARIABLE
+          text: city
+        - text: '", "stateProvince": "'
+        - type: VARIABLE
+          text: state_province
+        - text: '", "country": "'
+        - type: VARIABLE
+          text: country
+        # Increment postal code by one
+        - text: '", "postalCode": "'
+        - type: INTARITHMETIC
+          text: postal_code+1
+        - text: '"}, "phoneNumber": "'
+        - type: VARIABLE
+          text: phone_number
+        - text: '", "phoneNumberType": "'
+        - type: VARIABLE
+          text: phone_number_type
+        - text: '"}'
+  # Loop iteration 1
+  # Query flight
+  - service_name: acmeair-web
+    method: POST
+    headers:
+      Cookie:
+        type: VARIABLE
+        text: session_id
+      Cache-Control:
+        text: no-cache
+      Accept-Encoding:
+        text: gzip, deflate
+      X-Requested-With:
+        text: XMLHttpRequest
+      Pragma:
+        text: no-cache
+    uri:
+      text: /rest/api/flights/queryflights
+    body:
+      type: COMPOSITE
+      children:
+        - text: '{"fromAirport": "'
+        - type: RANDOMOF
+          text: ',DEL,FRA,HKG,LHR,BOM,YUL,SVO,JFK,CDG,FCO,SIN,SYD,IKA,NRT'
+        - text: '", "toAirport": "'
+        - type: RANDOMOF
+          text: ',NRT,BOM,DEL,FRA,AMS,HKG,LHR,YUL,SVO,JFK,CDG,FCO,SIN,SYD,IKA'
+        - text: '", "oneWay": "false", "fromDate": "'
+        # TODO: Maybe use fixed list of dates with RandomOf
+        - type: LOCALNOW
+          text: 'EEE LLL dd 00:00:00 yyyy'
+        - text: '", "returnDate": "'
+        - type: LOCALNOW
+          text: 'EEE LLL dd 00:00:00 yyyy'
+        - text: '"}'
+    post_processing_expressions:
+      - type: EXTRACT
+        text: 'tripFlights[0].flightOptions.RANDOM_ARRAY_FIELD._id'
+        store_as: to_flight_id
+      - type: EXTRACT
+        text: 'tripFlights[0].flightOptions[0].flightSegment._id'
+        store_as: to_flight_seg_id
+      - type: EXTRACT
+        text: 'tripFlights[1].flightOptions.RANDOM_ARRAY_FIELD._id'
+        store_as: ret_flight_id
+      - type: EXTRACT
+        text: 'tripFlights[1].flightOptions[0].flightSegment._id'
+        store_as: ret_flight_seg_id
+  # Book flight
+  - service_name: acmeair-web
+    method: POST
+    headers:
+      Cookie:
+        type: VARIABLE
+        text: session_id
+      Cache-Control:
+        text: no-cache
+      Accept-Encoding:
+        text: gzip, deflate
+      X-Requested-With:
+        text: XMLHttpRequest
+      Pragma:
+        text: no-cache
+    uri:
+      text: /rest/api/bookings/bookflights
+    body:
+      type: COMPOSITE
+      children:
+        - text: '{"userid": "uid'
+        - type: VARIABLE
+          text: uid
+        - text: '@email.com", "toFlightId": "'
+        - type: VARIABLE
+          text: to_flight_id
+        - text: '", "toFlightSegId": "'
+        - type: VARIABLE
+          text: to_flight_seg_id
+        - text: '", "retFlightId": "'
+        - type: VARIABLE
+          text: ret_flight_id
+        - text: '", "retFlightSegId": "'
+        - type: VARIABLE
+          text: ret_flight_seg_id
+        - text: '", "oneWayFlight": "false"}'
+  # List Bookings
+  - service_name: acmeair-web
+    method: GET
+    headers:
+      Cookie:
+        type: VARIABLE
+        text: session_id
+      Cache-Control:
+        text: no-cache
+      Accept-Encoding:
+        text: gzip, deflate
+      X-Requested-With:
+        text: XMLHttpRequest
+      Pragma:
+        text: no-cache
+    uri:
+      type: COMPOSITE
+      children:
+        - text: rest/api/bookings/byuser/uid
+        - type: VARIABLE
+          text: uid
+        - text: '@email.com'
