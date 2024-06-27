@@ -24,7 +24,7 @@ remote_docker() {
 		docker_cmd="docker compose up --build --detach --force-recreate --wait --quiet-pull"
 		;;
 	"down")
-		docker_cmd="docker compose down"
+		docker_cmd="docker compose down -v"
 		;;
 	*)
 		printf "invalid argument: cmd must be {up | down }, not %s\n" "$cmd" >&2
@@ -98,8 +98,10 @@ echo MG_PROMETHEUS_VOLUME_NAME='"$VOLUME_NAME"' > .env
 		printf "Starting ACME AIR server on %s\n" "$SERVER_IP"
 		remote_docker "up"
 
+		curl "http://$SERVER_IP:$PORT/rest/api/loader/load"
+
 		YAML_FILE="$(mktemp)"
-		sed -e 's/{{ACMEAIR_WEB_HOST}}/'"$SERVER_IP:$PORT"'/g' "$WORKLOAD_FILE" >"$YAML_FILE"
+		sed -e 's/{{ACMEAIR_WEB_HOST}}/'"host.docker.internal:$PORT"'/g' "$WORKLOAD_FILE" >"$YAML_FILE"
 		cd "$PWD/document/workload/http-loadgenerator"
 		YAML_PATH="$YAML_FILE" \
 			BENCHMARK_RUN="$RUN_DIR" \
@@ -126,7 +128,7 @@ docker run \
 --user 65534:65534 \
 busybox \
 tar -czf /backup/metrics.tar.gz /data/
-rm $HOME/monitorless/applications/solr/.env
+rm $HOME/acmeair-nodejs/.env
 docker volume rm '"$VOLUME_NAME"''
 	scp "$USER"@"$SERVER_IP":/tmp/metrics.tar.gz "$MEASUREMENTS_DIR/metrics.tar.gz"
 )
