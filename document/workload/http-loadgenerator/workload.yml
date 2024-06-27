@@ -767,3 +767,7 @@ user_requests:
         text: no-cache
     uri:
       text: rest/api/login/logout
+    post_processing_expressions:
+      - type: EXTRACTHEADER
+        text: Set-Cookie
+        store_as: session_id
