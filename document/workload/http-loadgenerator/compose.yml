@@ -1,0 +1,48 @@
+services:
+  loadgenerator:
+    build:
+      context: "."
+      dockerfile: loadgenerator.Dockerfile
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+  director:
+    build:
+      context: "."
+      dockerfile: director.Dockerfile
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - "${YAML_PATH?No yaml path specified}:/opt/load_generator.yml:ro"
+      - "${BENCHMARK_RUN?No benchmark run directory defined}:/loadgenerator:rw"
+      - "${PROFILE?No profile defined}:/opt/profile.csv"
+    entrypoint:
+      [
+        "java",
+        "-jar",
+        "/opt/httploadgenerator/httploadgenerator.jar",
+        "director",
+        "--ip",
+        "loadgenerator",
+        "-t",
+        "${DIRECTOR_THREADS?No director threads defined}",
+        "--yaml",
+        "/opt/load_generator.yml",
+        "--load",
+        "/opt/profile.csv",
+        "--arrival-profile-duration",
+        "${BENCHMARK_DURATION?No duration defined}",
+        "-o",
+        "summary_out.csv",
+        "--ro",
+        "request_out.csv",
+        "-u",
+        "${VIRTUAL_USERS?No virtual users defined}",
+        "--timeout",
+        "${TIMEOUT?No request timeout defined}",
+        "--wp",
+        "${WARMUP_PAUSE?No warmup pause defined}",
+        "--wd",
+        "${WARMUP_DURATION?No warmup duration defined}",
+        "--wr",
+        "${WARMUP_RPS?No warmup rps defined}",
+      ]

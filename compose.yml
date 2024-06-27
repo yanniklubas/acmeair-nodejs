@@ -30,7 +30,7 @@ services:
     privileged: true
     image: gcr.io/cadvisor/cadvisor:v0.47.2
     ports:
-      - 5050:8080
+      - 8080
     devices:
       - /dev/kmsg
     volumes:
@@ -46,7 +46,7 @@ services:
   prometheus:
     image: prom/prometheus:v2.49.1
     ports:
-      - 9090:9090
+      - 9090
     volumes:
       - $PWD/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus:/prometheus:rw
