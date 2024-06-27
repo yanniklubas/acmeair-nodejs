@@ -750,20 +750,20 @@ user_requests:
         - type: VARIABLE
           text: uid
         - text: '@email.com"}'
-  # Logout
-  - service_name: acmeair-web
-    method: GET
-    headers:
-      Cookie:
-        type: VARIABLE
-        text: session_id
-      Cache-Control:
-        text: no-cache
-      Accept-Encoding:
-        text: gzip, deflate
-      X-Requested-With:
-        text: XMLHttpRequest
-      Pragma:
-        text: no-cache
-    uri:
-      text: rest/api/login/logout
+# Logout
+# - service_name: acmeair-web
+#   method: GET
+#   headers:
+#     Cookie:
+#       type: VARIABLE
+#       text: session_id
+#     Cache-Control:
+#       text: no-cache
+#     Accept-Encoding:
+#       text: gzip, deflate
+#     X-Requested-With:
+#       text: XMLHttpRequest
+#     Pragma:
+#       text: no-cache
+#   uri:
+#     text: rest/api/login/logout
