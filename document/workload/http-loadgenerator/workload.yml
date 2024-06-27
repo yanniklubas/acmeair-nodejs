@@ -24,7 +24,7 @@ user_requests:
       children:
         - text: '{"login": "uid'
         - type: RANDOMINT
-          text: 0, {{SEED_COUNT}}
+          text: 0, 10000
           store_as: uid
         - text: '@email.com", "password": "password"}'
     post_processing_expressions:
