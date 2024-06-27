@@ -382,7 +382,7 @@ module.exports = function (dbtype, authService, settings) {
 			if (err) callback (err, null);
 			else{
 				if (now > session.timeoutTime) {
-					daraaccess.remove(module.dbNames.customerSessionName,{'_id':sessionId}, function(error) {
+					dataaccess.remove(module.dbNames.customerSessionName,{'_id':sessionId}, function(error) {
 						if (error) callback (error, null);
 						else callback(null, null);
 					});
