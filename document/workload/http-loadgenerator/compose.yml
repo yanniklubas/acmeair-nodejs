@@ -29,8 +29,6 @@ services:
         "/opt/load_generator.yml",
         "--load",
         "/opt/profile.csv",
-        "--arrival-profile-duration",
-        "${BENCHMARK_DURATION?No duration defined}",
         "-o",
         "summary_out.csv",
         "--ro",
