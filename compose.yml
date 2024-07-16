@@ -23,6 +23,10 @@ services:
       - MONGO_URL=mongodb://admin_user:sup3rs3cr3t@acmeair-mongo:27017/acmeair?authSource=admin
     ports:
       - 9080:9080
+    deploy:
+      resources:
+        limits:
+          cpus: 1.0
     depends_on:
       acmeair-mongo:
         condition: service_healthy
